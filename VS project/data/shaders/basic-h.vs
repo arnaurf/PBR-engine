@@ -5,7 +5,6 @@ attribute vec4 a_color;
 
 uniform vec3 u_camera_pos;
 
-//uniform sampler2D u_normal_map;
 uniform mat4 u_model;
 uniform mat4 u_viewprojection;
 uniform sampler2D u_height_map;
@@ -25,10 +24,11 @@ void main()
 	
 	//calcule the vertex in object space
 	vec4 aux = texture2D(u_height_map, a_uv);
-	v_position = a_vertex+normalize(v_normal)*aux.x*u_scale_h;
+	//aux = aux*2.0-1.0;
+	v_position = a_vertex;
 
-	v_world_position = (u_model * vec4( v_position, 1.0) ).xyz;
-	
+	v_world_position = (u_model * vec4( v_position, 1.0) ).xyz + normalize(v_normal)*aux.x*u_scale_h;
+	//v_world_position = v_world_position/u_scale_h;
 	//store the color in the varying var to use it from the pixel shader
 	v_color = a_color;
 

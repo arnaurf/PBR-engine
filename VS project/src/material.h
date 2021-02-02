@@ -82,7 +82,9 @@ public:
 	Texture* albedo = NULL;
 	Texture* brdf_text = NULL;
 	Texture* height_map = NULL;
-
+	Texture* opacity_map = NULL;
+	Texture* occlusion_map = NULL;
+	Texture* emissive_map = NULL;
 	bool use_textures = 0;
 	bool use_height_map = 0;
 

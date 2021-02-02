@@ -46,11 +46,14 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 
 	// Create scene node 
 	SceneNode * node = new SceneNode("Rendered node");
-	root.push_back(node);
+	
 
 	// Set mesh and manipulate model matrix
 	node->mesh = Mesh::Get("data/meshes/sphere.obj");
 	node->model.setScale(4, 4, 4);
+
+	//node->mesh = Mesh::Get("data/meshes/export.OBJ");
+	//node->model.setScale(0.1,0.1, 0.1);
 
 	// Create node material
 	
@@ -60,13 +63,13 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 	//create GPU texture to store environment info
 
 	Texture * cubemapTex = new Texture();
-
 	//This only stores the first level(Specular reflection -> 0 roughness)
 
 	cubemapTex->createCubemap(hdre->width, hdre->height, (Uint8**)hdre->getFaces(0));
 
-
-
+	Skybox* sky = new Skybox();
+	root.push_back(sky);
+	root.push_back(node);
 
 	//------------------- HBRE ---------------
 	
@@ -74,29 +77,43 @@ Application::Application(int window_width, int window_height, SDL_Window* window
 	material->loadCubemapTex(hdre);
 	node->material = material;
 
-
+	/*
 	
 	material->metal_map = Texture::Get("data/models/ball/metalness.png");
 	material->normal_map = Texture::Get("data/models/ball/normal.png");
 	material->rough_map = Texture::Get("data/models/ball/roughness.png");
 	material->albedo = Texture::Get("data/models/ball/albedo.png");
-	/*
+	
 	material->metal_map = Texture::Get("data/pbr/metalgrid/metalgrid2_metallic.png");
 	material->normal_map = Texture::Get("data/pbr/metalgrid/metalgrid2_normal-dx.png");
 	material->rough_map = Texture::Get("data/pbr/metalgrid/metalgrid2_roughness.png");
 	material->albedo = Texture::Get("data/pbr/metalgrid/metalgrid2_AO.png");
 	
-	material->metal_map = Texture::Get("data/pbr/militar/military-panel1-metalness.png");
-	material->normal_map = Texture::Get("data/pbr/militar/military-panel1-nmap-ogl.png");
-	material->rough_map = Texture::Get("data/pbr/militar/military-panel1-metalness.png");
+	*/
 	material->albedo = Texture::Get("data/pbr/militar/military-panel1-albedo.png");
+	material->normal_map = Texture::Get("data/pbr/militar/military-panel1-nmap-ogl.png");
+	material->metal_map = Texture::Get("data/pbr/militar/military-panel1-metalness.png");
+	material->rough_map = Texture::Get("data/pbr/militar/military-panel1-metalness.png");
+	material->occlusion_map = Texture::Get("data/pbr/militar/military-panel1-ao.png");
+	material->height_map = Texture::Get("data/pbr/militar/military-panel1-height_.png");
+	material->emissive_map = Texture::Get("data/pbr/militar/military-panel1-emissive_power.png");
 	
+	
+	/*
 	material->metal_map = Texture::Get("data/pbr/cloth/worn-blue-burlap-Metallic.png");
 	material->normal_map = Texture::Get("data/pbr/cloth/worn-blue-burlap-Normal-dx.png");
 	material->rough_map = Texture::Get("data/pbr/cloth/worn-blue-burlap-Roughness.png");
 	material->albedo = Texture::Get("data/pbr/cloth/worn-blue-burlap-albedo.png");
 	material->height_map = Texture::Get("data/pbr/cloth/worn-blue-burlap-Height.png");
+	
+	
+	material->albedo = Texture::Get("data/pbr/lantern/lantern_Base_Color.png");
+	material->normal_map = Texture::Get("data/pbr/lantern/lantern_Normal_OpenGL.png");
+	material->metal_map = Texture::Get("data/pbr/lantern/lantern_Metallic.png");
+	material->rough_map = Texture::Get("data/pbr/lantern/lantern_Roughness.png");
+	material->opacity_map = Texture::Get("data/pbr/lantern/lantern_Opacity.png");
 	*/
+
 
 	sh_simple = Shader::Get("data/shaders/basic.vs", "data/shaders/skeleton_pbr.fs");
 	sh_text = Shader::Get("data/shaders/basic.vs", "data/shaders/skeleton_pbr_texture.fs");

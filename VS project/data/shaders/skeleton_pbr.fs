@@ -11,6 +11,7 @@ varying vec2 v_uv;
 uniform vec3 u_camera_position;
 uniform vec4 u_color;
 
+
 // Levels of HDRE
 uniform samplerCube u_texture;
 uniform samplerCube u_texture_prem_0;

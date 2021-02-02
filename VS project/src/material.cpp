@@ -258,16 +258,41 @@ void HBRMaterial::setUniforms(Camera* camera, Matrix44 model)
 	
 	if (brdf_text)
 		shader->setUniform("u_brdf_text", brdf_text,6);
+	else shader->setUniform("u_brdf_text", Texture::getBlackTexture(), 6);
+
 	if(normal_map)
 		shader->setUniform("u_normal_map", normal_map,7);
+	else shader->setUniform("u_normal_map", Texture::getBlackTexture(), 7);
+
 	if(rough_map)
 		shader->setUniform("u_rough_map", rough_map,8);
+	else shader->setUniform("u_rough_map", Texture::getBlackTexture(), 8);
+
 	if(metal_map)
 		shader->setUniform("u_metal_map", metal_map,9);
-	if (metal_map)
+	else shader->setUniform("u_metal_map", Texture::getBlackTexture(), 9);
+
+	if (albedo)
 		shader->setUniform("u_albedo", albedo, 10);
-	if (height_map)
+	else shader->setUniform("u_albedo", Texture::getBlackTexture(), 10);
+
+	if (height_map && this->use_height_map)
 		shader->setUniform("u_height_map", height_map, 11);
+	else shader->setUniform("u_height_map", Texture::getBlackTexture(), 11);
+
+	if (occlusion_map)
+		shader->setUniform("u_ambient_occlusion", occlusion_map, 13);
+	else shader->setUniform("u_ambient_occlusion", Texture::getBlackTexture(), 13);
+
+	if (emissive_map)
+		shader->setUniform("u_emissive_map", emissive_map, 14);
+	else shader->setUniform("u_emissive_map", Texture::getBlackTexture(), 14);
+
+	if (opacity_map) {
+		shader->setUniform("u_opacity_map", opacity_map, 12);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	}
 
 }
 

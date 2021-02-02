@@ -127,18 +127,38 @@ void main()
 {
 	
 	vec4 color = texture2D(u_albedo, v_uv);
+
 	vec3 l = normalize( u_light_pos - v_world_position );
 	vec3 n = normalize(v_normal);
 	vec3 v = normalize(u_camera_position - v_world_position);
 	vec3 h = normalize(l+v);
 
-
 	vec4 norm = texture2D(u_normal_map, v_uv);
+	vec4 normal4 = normalize(norm*2.0-1.0);
+
+	vec4 ao = texture2D(u_ambient_occlusion, v_uv);
+	
+	vec3 angle_map = getAngle(normal4.xyz);
+	mat3 rotx; 
+	rotx[0] = vec3(1,0,0); 
+	rotx[1] = vec3(0, cos(angle_map.x), sin(angle_map.x)); 
+	rotx[2] = vec3(0, -sin(angle_map.x), cos(angle_map.x));
+
+	mat3 roty; 
+	roty[0] = vec3(cos(angle_map.y),0,-sin(angle_map.y)); 
+	roty[1] = vec3(0, 1, 0); 
+	roty[2] = vec3(sin(angle_map.y), 0, cos(angle_map.y));
+
+	mat3 rotz; 
+	rotz[0] = vec3(cos(angle_map.z),sin(angle_map.z),0); 
+	rotz[1] = vec3(-sin(angle_map.z), cos(angle_map.z), 0); 
+	rotz[2] = vec3(0, 0, 1);
+
+	//vec3 n2 = rotz*roty*rotx*normalize(v_normal);
+	
 	vec3 n2 = perturbNormal(n, v, v_uv, norm);
-	n=n2;
-	
-	
 	//clamping dots
+
 	float ldoth = clamp(dot(l,h),0.001,0.99);
 	float ndoth = clamp(dot(n,h),0.001,0.99);
 	float ndotv = clamp(dot(n,v),0.001,0.99);
@@ -152,6 +172,7 @@ void main()
 	vec3 f0_specular = vec3(0.04);
 
 	Pbr_material material;
+
 	vec4 aux;
 	aux = texture2D(u_rough_map, v_uv);
 	material.roughness = aux.r;
@@ -159,53 +180,62 @@ void main()
 	aux = texture2D(u_metal_map, v_uv);
 	material.metallic = aux.r;
 
-	material.diffuse = vec3(0.0)*material.metallic + color *(1.0 - material.metallic); //*ao.x
+	material.diffuse = vec3(0.0)*material.metallic + color *(1.0 - material.metallic)*ao.x;
 	material.specular = color*material.metallic + f0_specular *(1.0 - material.metallic);
 	
 	
-	//*******************PUNCTUAL LIGHTING*****************************
+		//PUNCTUAL LIGHTING
+
+	
 	//float G = min(min(1.0, 2.0*ndoth*ndotv/vdoth), 2.0*ndoth*ndotl/vdoth);
 	//float G = 1/pow(ldoth, 2.0);
-	float G = G1(l, n, material.roughness)*G1(v, n, material.roughness);
+	float G = G1(l, n2, material.roughness)*G1(v, n2, material.roughness);
 
 	//float D = (u_alpha + 2)/(2*PI)*pow(ndoth, u_alpha);
 	float alpha = pow(material.roughness,2.0);
-	float D = pow(alpha, 2.0)/(PI*pow(pow(clamp(dot(n, h), 0.01, 0.99),2.0)*(pow(alpha,2.0)-1.0)+1.0,2.0));
+	float D = pow(alpha, 2.0)/(PI*pow(pow(clamp(dot(n2, h), 0.01, 0.99),2.0)*(pow(alpha,2.0)-1.0)+1.0,2.0));
 	
 	//vec3 fresnel = material.specular + (1.0 - material.specular)*pow(2, (-5.55473*dot(l,n)-6.98316)*dot(l,n));
-	vec3 fresnel = material.specular + (1.0-material.specular)*pow(1.0-clamp(dot(l,n), 0.01, 0.99),5.0);
+	vec3 fresnel = material.specular + (1.0-material.specular)*pow(1.0-clamp(dot(l,n2), 0.01, 0.99),5.0);
 	
 	vec3 f_lambert = material.diffuse/PI;
-	vec3 f_pfacet = G*D*fresnel/(4*clamp(dot(n,l), 0.15, 0.99)*dot(n,v));
+	
+
+	vec3 f_pfacet = G*D*fresnel/(4*clamp(dot(n2,l), 0.15, 0.99)*dot(n2,v));
+	//vec3 f_pfacet = G*;
+	// simple tone-mapping
+
 
 	vec3 punctual = f_lambert + f_pfacet;
-	//******************************************************************
 
 
 
-	//*****************IBL ENVIRONMENT LIGHTING*************************
+	//IBL ENVIRONMENT LIGHTING
 	//float ibl_brdf = material.diffuse/PI;
+
 	//vec3 ibl_brdf = getReflectionColor(reflect(v, n), material.roughness);
 
-	vec4 text2 =  texture2D(u_brdf_text, vec2(dot(n,v),material.roughness)) ;
+	vec4 text2 =  texture2D(u_brdf_text, vec2(dot(n2,v),material.roughness)) ;
 	float a = text2.r;
 	float b = text2.g;
 	vec3 brdf_specular = material.specular*a + b;
 
-	vec3 IBL_diff = material.diffuse * getReflectionColor(reflect(v, normalize(n)),1.0);
-	vec3 IBL_spec = brdf_specular * getReflectionColor(reflect(v, normalize(n)), material.roughness);
+
+	vec3 IBL_diff = material.diffuse * getReflectionColor(reflect(v, normalize(n2)),1.0);
+	vec3 IBL_spec = brdf_specular * getReflectionColor(reflect(v, normalize(n2)), material.roughness);
 	vec3 IBL = IBL_diff + IBL_spec;
 	vec3 full_light = punctual + IBL;
-	//******************************************************************
+
+
 
 	full_light.rgb /= (full_light.rgb + vec3(1.0));
 	
 	// gamma correct 
 	//full_light.rgb = pow(full_light.rgb, vec3(1.0/2.2));
 
-	//****************** Final color ******************
-	//vec4 opacity = texture2D(u_opacity_map, v_uv);
+	// Final color
+	vec4 opacity = texture2D(u_opacity_map, v_uv);
 	vec4 emissive = texture2D(u_emissive_map, v_uv);
-	full_light.rgb += emissive.rgb * pow(2.0, 1.5 + emissive.w - 3.0);
+	 //full_light.rgb += emissive.rgb * pow(2.0, 1.5 + emissive.w - 3.0);
 	gl_FragColor = vec4(full_light, 1.0);
 }

@@ -33,8 +33,8 @@ vec3 toneMapUncharted(vec3 color)
 void main()
 {
 	vec3 E = normalize(v_world_position - u_camera_position);
-	E.y = -E.y; // openGL flips texture in Y
-
+	//E.y = -E.y; // openGL flips texture in Y
+	E = -E;
 	vec4 color = u_color * textureCube( u_texture, E );
 
 	color = pow(color, vec4(1.0/2.2));
